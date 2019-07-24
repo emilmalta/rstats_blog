@@ -191,17 +191,6 @@ leaflet() %>%
 
 If you haven't noticed yet, you can click around and zoom on the map. I don't really know how to change the projection yet, but I'm partial to seeing Greenland in the Mercator projection, it looks so majestic! We can of course add all of the sf data we've been importing, with the caveat being that we need to change everything back into EPSG:4326 (standard lon-lat form)
 
-```{r, fig.cap=""}
-# Works well with sf data
-leaflet() %>% 
-  addTiles() %>% 
-  addAwesomeMarkers(data  = st_transform(localities_pop_sf, 4326),
-                    label = ~navn) %>% 
-  addPolylines(data    = st_transform(borders, 4326), 
-               opacity = 1, weight = 1)
-```
-
-
 I think the wildest thing is that it even renders in the rmarkdown you're reading right now. Let's try and recreate the map we did in ggplot:
 
 ```{r}
