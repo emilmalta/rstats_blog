@@ -1,0 +1,235 @@
+---
+title: "Drawing maps in R"
+author: "Emil Malta"
+date: "7/22/2019"
+output: 
+  html_document
+---
+
+<style>
+.html-widget {
+    margin: auto;
+}
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center")
+```
+
+
+## Simple features
+
+If you want to start drawing maps in R, the best place to begin is to familiarize
+yourself with the Simple Features (sf) data format. This is an open standard 
+developed by the Open Geospatial Consortium, meant to represent geographical 
+vector data. 
+
+The sf package in R is a great implementation of this, and allows you to work 
+with the sf data as regular data frames. I.e. you can do typical data 
+operations, like filters, grouped calculations, join with other datasets, 
+etc. There has also been functionality implemented for ggplot2, so you can draw
+maps using geom_sf. All of the good stuff.
+
+```{r, message=FALSE}
+library(tidyverse)
+library(sf)
+```
+
+## Plotting maps with ggplot2
+
+I want to draw maps of Greenland. The National Survey of Greenland (ASIAQ) has 
+an online map, which is useful for downloading geolocations of cities and 
+borders. It does not have a hi-res shapefile of the island though, so I've opted
+to use the sf data found in the rnaturalearth package.
+
+```{r, fig.height = 4}
+library(rnaturalearth)
+
+# Gets world data in sf format
+world_sf <- ne_countries(returnclass = "sf")
+
+# Draws a map
+world_sf %>% 
+  ggplot() +
+  geom_sf() +
+  theme(legend.position = "none")
+```
+
+This draws a map of the whole world, and I'm really only interested in drawing Greenland at the moment. You can isolate the Greenland data by filtering the dataset like any other dataframe! 
+
+```{r}
+# Filter on name
+greenland <- 
+  world_sf %>%
+  filter(name_long == "Greenland") 
+
+# Draw a pretty map
+greenland %>% 
+  ggplot() + 
+  geom_sf()
+```
+
+I hate everything about this. This projection completely distorts the shape of Greenland. ASIAQs online map draws it using a projection referred to as EPSG 32624, so I'm going to stick with that. Even worse, the resolution is very low. All of the fjords have vanished, and the island of Qeqertarsuaq has been reduced to a peninsula.  Thankfully, you can adjust the scale in ne_countries:
+
+```{r}
+# Assign new prjection by EPSG:32642
+greenland_good <- 
+  ne_countries(scale = 50, returnclass = "sf") %>%
+  filter(name_long == "Greenland") %>% 
+  st_transform(32624)
+
+# This will be a base map to draw stuff on
+grl_map <- greenland_good %>% 
+  ggplot() +
+  geom_sf(fill = "white") +
+  labs(fill = "", color = "") +
+  theme_minimal()
+
+# Draw even prettier map
+grl_map
+```
+
+While we're at it. let's plot some cities and borders on it! I've downloaded the borders as a shapefile from the online map, and the cities and settlements as plain csv files. The file with borders can be read using read_sf, and the csv files can be imported as regular files, and converted into sf objects.
+
+Sidenote: The csv files are all in the same folder, and I know that they have the same columns. This means that I can enframe the list of file paths, and map every value to a read_csv function. I love this trick.
+
+```{r, message = FALSE}
+# Read borders
+borders_raw <- 
+  read_sf("data/map_data/ds_adm_grenser_kommuner_grenser_nye.shp") 
+
+# Read localities
+localities_raw <- 
+  list.files("data/map_data/", full.names = TRUE, pattern = "*.csv") %>% 
+  enframe() %>% 
+  mutate(tbl = map(value, read_csv2)) %>% 
+  unnest() %>% 
+  filter(!is.na(shape_wkt)) %>% 
+  st_as_sf(wkt = "shape_wkt")
+
+# What does that look like?
+ggplot() +
+  geom_sf(data = borders_raw) +
+  geom_sf(data = localities_raw)
+```
+
+You can sort of make out the coastline! This tells me that the data is loaded successfully, but I need to declare that it was loaded using EPSG:4326, and should be transformed to EPSG:32624. 
+
+```{r}
+# Clean borders
+borders <- borders_raw %>% 
+  st_set_crs(4326) %>% 
+  st_transform(32624)
+
+# Clean localities
+localities <- localities_raw %>% 
+  mutate(type = case_when(name == 1 ~ "Town", name == 2 ~ "Settlement")) %>% 
+  st_set_crs(4326) %>% 
+  st_transform(32624)
+```
+
+The transformed data can be added as layers on the original map:
+
+```{r}
+# Borders look fine, just attach them to the final thing
+grl_map <- grl_map +
+  geom_sf(data = borders, color = "lightblue")
+
+# Draw with localities
+grl_map +
+  geom_sf(data = localities, aes(fill = type, color = type))
+```
+
+If you've spent any time in Greenland, you'll know that saying "the coast" is the same as saying "the whole country", and this is why. Another thing to note is that the municipality borders are impractical for drawing things like chloropleths, most of the area is just ice cap anyway.
+
+One final thing I'd like to put on this is information about population. Looking at the map as it is now, the coast actually looks quite populous. I assure you that this is not the case, settlements are much smaller in population than cities. Population figures for every locality are available at Statistics Greenland. I have a copy saved at the data folder:
+
+```{r, message = FALSE}
+# Raw population data
+popdata_raw <- read_csv2("data/map_data/population.csv")
+
+# Needs to join on points by location code (akronym)
+popdata <- popdata_raw %>% 
+  transmute(akronym = str_sub(locality, -3), population = n)
+
+# Do the join
+localities_pop_sf <- localities %>% 
+  left_join(popdata, by = "akronym") %>% 
+  arrange(desc(population))
+
+# And draw!
+grl_map +
+  geom_sf(data = localities_pop_sf,
+          aes(size = population, color = type, fill = type))
+```
+
+Almost there! One thing I don't like about this map is that the default values of minimum and maximum size of the points are so similar. Just by intuition, I know that settlements should be much smaller than cities. I don't know if that's a terribly healthy instinct, but I am very much compelled to redefine the ranges of the point size. I don't like the legend either.
+
+```{r}
+# Final ggplot map!
+grl_map +
+  geom_sf(data = localities_pop_sf,
+          aes(size = population, color = type, fill = type)) +
+  scale_radius(range = c(0.5, 12), guide = "none")
+```
+
+The big red blob is the capitol city Nuuk, where I live. It is by far the most populous city.
+
+## Interactive maps with leaflet
+
+That was a lot of energy spent on explaining how static maps are drawn programmatically. In true R fashion, there is of course a much simpler way to do something even more impressive! If you work with sf data in R, you absolutely need to familiarize yourself with the leaflet package.
+
+Truth is that I don't know that much about the package yet, but I can do some pretty outrageous stuff with it.
+
+```{r}
+library(leaflet)
+
+# Draw an interactive map in 2 lines
+leaflet() %>% 
+  addTiles() 
+```
+
+If you haven't noticed yet, you can click around and zoom on the map. I don't really know how to change the projection yet, but I'm partial to seeing Greenland in the Mercator projection, it looks so majestic! We can of course add all of the sf data we've been importing, with the caveat being that we need to change everything back into EPSG:4326 (standard lon-lat form)
+
+```{r, fig.cap=""}
+# Works well with sf data
+leaflet() %>% 
+  addTiles() %>% 
+  addMarkers(data  = st_transform(localities_pop_sf, 4326),
+             label = ~navn) %>% 
+  addPolylines(data    = st_transform(borders, 4326), 
+               opacity = 1, weight = 1)
+```
+
+
+I think the wildest thing is that it even renders in the rmarkdown you're reading right now. Let's try and recreate the map we did in ggplot:
+
+```{r}
+# Define a palette
+pal <- colorFactor(c("red", "blue"), domain = c("Town", "Settlement"))
+
+# And recreate!
+leaflet() %>% 
+  addTiles() %>% 
+  addPolylines(data    = st_transform(borders, 4326),
+               color   = "lightblue",  
+               opacity = 1, 
+               weight  = 1) %>% 
+  addCircleMarkers(data   = st_transform(localities_pop_sf, 4326),
+                   color  = ~pal(type), fillOpacity = .6,
+                   radius = ~sqrt(population/50),
+                   label  = ~navn, 
+                   stroke = F)
+```
+
+## Conclusion
+
+This is bonkers.
+
+## Links
+
+Most of what I know about sf objects is straight from https://geocompr.robinlovelace.net/ 
+
+For messing around with leaflet, I recommend going to https://rstudio.github.io/leaflet/ 
+
+Happy mapping!
