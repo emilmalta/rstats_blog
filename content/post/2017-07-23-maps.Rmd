@@ -195,8 +195,8 @@ If you haven't noticed yet, you can click around and zoom on the map. I don't re
 # Works well with sf data
 leaflet() %>% 
   addTiles() %>% 
-  addMarkers(data  = st_transform(localities_pop_sf, 4326),
-             label = ~navn) %>% 
+  addAwesomeMarkers(data  = st_transform(localities_pop_sf, 4326),
+                    label = ~navn) %>% 
   addPolylines(data    = st_transform(borders, 4326), 
                opacity = 1, weight = 1)
 ```
