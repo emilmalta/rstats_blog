@@ -160,7 +160,7 @@ localities_pop_sf <- localities %>%
 # And draw!
 grl_map +
   geom_sf(data = localities_pop_sf,
-          aes(size = population, color = type, fill = type))
+          aes(size = population, color = type, fill = type), alpha = 0.7)
 ```
 
 Almost there! One thing I don't like about this map is that the default values of minimum and maximum size of the points are so similar. Just by intuition, I know that settlements should be much smaller than cities. I don't know if that's a terribly healthy instinct, but I am very much compelled to redefine the ranges of the point size. I don't like the legend either.
@@ -168,12 +168,12 @@ Almost there! One thing I don't like about this map is that the default values o
 ```{r}
 # Final ggplot map!
 grl_map +
-  geom_sf(data = localities_pop_sf,
-          aes(size = population, color = type, fill = type)) +
+  geom_sf(data = localities_pop_sf %>% arrange(desc(population)),
+          aes(size = population, color = type, fill = type), alpha = 0.5) +
   scale_radius(range = c(0.5, 12), guide = "none")
 ```
 
-The big red blob is the capitol city Nuuk, where I live. It is by far the most populous city.
+The big blue blob is the capitol city Nuuk, where I live. It is by far the most populous place.
 
 ## Interactive maps with leaflet
 
