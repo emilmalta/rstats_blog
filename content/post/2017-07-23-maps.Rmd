@@ -168,6 +168,7 @@ Almost there! One thing I don't like about this map is that the default values o
 grl_map +
   geom_sf(data = localities_pop_sf %>% arrange(desc(population)),
           aes(size = population, color = type, fill = type), alpha = 0.5) +
+  labs(color = "", fill = "") +
   scale_radius(range = c(0.5, 12), guide = "none")
 ```
 
