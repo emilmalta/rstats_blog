@@ -152,8 +152,7 @@ popdata <- popdata_raw %>%
 
 # Do the join
 localities_pop_sf <- localities %>% 
-  left_join(popdata, by = "akronym") %>% 
-  arrange(desc(population))
+  left_join(popdata, by = "akronym")
 
 # And draw!
 grl_map +
@@ -166,7 +165,7 @@ Almost there! One thing I don't like about this map is that the default values o
 ```{r}
 # Final ggplot map!
 grl_map +
-  geom_sf(data = localities_pop_sf %>% arrange(desc(population)),
+  geom_sf(data = localities_pop_sf,
           aes(size = population, color = type, fill = type), alpha = 0.5) +
   labs(color = "", fill = "") +
   scale_radius(range = c(0.5, 12), guide = "none")
