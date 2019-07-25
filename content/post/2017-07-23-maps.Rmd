@@ -98,7 +98,7 @@ borders_raw <-
 
 # Read localities
 localities_raw <- 
-  list.files("data/map_data/", full.names = TRUE, pattern = "*.csv") %>% 
+  list.files("data/map_data/", full.names = TRUE, pattern = "^ds.*.csv") %>% 
   enframe() %>% 
   mutate(tbl = map(value, read_csv2)) %>% 
   unnest() %>% 
