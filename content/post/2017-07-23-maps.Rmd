@@ -38,7 +38,7 @@ library(sf)
 ## Plotting maps with ggplot2
 
 I want to draw maps of Greenland. The National Survey of Greenland (ASIAQ) has 
-an online map, which is useful for downloading geolocations of cities and 
+an [online map]("http://en.nunagis.gl/cbkort?selectorgroups=themecontainer&mapext=-2428517.8%206230051.3%203312435.8%209483913.7&layers=theme-g250v%20theme-byer-bygder&mapheight=950&mapwidth=1123&profile=nun0000_public"), which is useful for downloading geolocations of cities and 
 borders. It does not have a hi-res shapefile of the island though, so I've opted
 to use the sf data found in the rnaturalearth package.
 
@@ -51,8 +51,7 @@ world_sf <- ne_countries(returnclass = "sf")
 # Draws a map
 world_sf %>% 
   ggplot() +
-  geom_sf() +
-  theme(legend.position = "none")
+  geom_sf()
 ```
 
 This draws a map of the whole world, and I'm really only interested in drawing Greenland at the moment. You can isolate the Greenland data by filtering the dataset like any other dataframe! 
@@ -69,10 +68,10 @@ greenland %>%
   geom_sf()
 ```
 
-I hate everything about this. This projection completely distorts the shape of Greenland. ASIAQs online map draws it using a projection referred to as EPSG 32624, so I'm going to stick with that. Even worse, the resolution is very low. All of the fjords have vanished, and the island of Qeqertarsuaq has been reduced to a peninsula.  Thankfully, you can adjust the scale in ne_countries:
+I hate everything about this. This projection completely distorts the shape of Greenland. ASIAQs online map draws it using a projection referred to as EPSG:32624, so I'm going to stick with that. Even worse, the resolution is very low. All of the fjords have vanished, and the island of Qeqertarsuaq has been reduced to a peninsula. Thankfully, you can adjust the scale in ne_countries:
 
 ```{r}
-# Assign new prjection by EPSG:32642
+# Assign new projection by EPSG:32624
 greenland_good <- 
   ne_countries(scale = 50, returnclass = "sf") %>%
   filter(name_long == "Greenland") %>% 
@@ -82,7 +81,6 @@ greenland_good <-
 grl_map <- greenland_good %>% 
   ggplot() +
   geom_sf(fill = "white") +
-  labs(fill = "", color = "") +
   theme_minimal()
 
 # Draw even prettier map
@@ -113,7 +111,7 @@ ggplot() +
   geom_sf(data = localities_raw)
 ```
 
-You can sort of make out the coastline! This tells me that the data is loaded successfully, but I need to declare that it was loaded using EPSG:4326, and should be transformed to EPSG:32624. 
+You can sort of make out the coastline! This tells me that the data is loaded successfully, but I need to declare that it was loaded using EPSG:4326 (standard lon-lat form), and should be transformed to EPSG:32624. 
 
 ```{r}
 # Clean borders
@@ -142,7 +140,7 @@ grl_map +
 
 If you've spent any time in Greenland, you'll know that saying "the coast" is the same as saying "the whole country", and this is why. Another thing to note is that the municipality borders are impractical for drawing things like chloropleths, most of the area is just ice cap anyway.
 
-One final thing I'd like to put on this is information about population. Looking at the map as it is now, the coast actually looks quite populous. I assure you that this is not the case, settlements are much smaller in population than cities. Population figures for every locality are available at Statistics Greenland. I have a copy saved at the data folder:
+One final thing I'd like to put on this is information about population. Looking at the map as it is now, the coast actually looks quite populous. I assure you that this is not the case, settlements are much smaller in population than cities. Population figures for every locality are available at [Statistics Greenland]("https://bank.stat.gl/BEEST4"). I have a copy saved at the data folder:
 
 ```{r, message = FALSE}
 # Raw population data
@@ -189,7 +187,7 @@ leaflet() %>%
   addTiles() 
 ```
 
-If you haven't noticed yet, you can click around and zoom on the map. I don't really know how to change the projection yet, but I'm partial to seeing Greenland in the Mercator projection, it looks so majestic! We can of course add all of the sf data we've been importing, with the caveat being that we need to change everything back into EPSG:4326 (standard lon-lat form)
+If you haven't noticed yet, you can click around and zoom on the map. I don't really know how to change the projection yet, but I'm partial to seeing Greenland in the Mercator projection, it looks so majestic! We can of course add all of the sf data we've been importing, with the caveat being that we need to change everything back into EPSG:4326.
 
 I think the wildest thing is that it even renders in the rmarkdown you're reading right now. Let's try and recreate the map we did in ggplot:
 
@@ -217,7 +215,9 @@ This is bonkers.
 
 ## Links
 
-Most of what I know about sf objects is straight from https://geocompr.robinlovelace.net/ 
+I have a zip file with the raw data used in this post [right here]("data/map_data.zip")
+
+Most of what I know about sf objects is straight from [Geocomputation with R]("https://geocompr.robinlovelace.net/")
 
 For messing around with leaflet, I recommend going to https://rstudio.github.io/leaflet/ 
 
