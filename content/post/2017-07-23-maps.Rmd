@@ -38,7 +38,7 @@ library(sf)
 ## Plotting maps with ggplot2
 
 I want to draw maps of Greenland. The National Survey of Greenland (ASIAQ) has 
-an [online map]("http://en.nunagis.gl/cbkort?selectorgroups=themecontainer&mapext=-2428517.8%206230051.3%203312435.8%209483913.7&layers=theme-g250v%20theme-byer-bygder&mapheight=950&mapwidth=1123&profile=nun0000_public"), which is useful for downloading geolocations of cities and 
+an [online map](http://en.nunagis.gl/cbkort?selectorgroups=themecontainer&mapext=-2428517.8%206230051.3%203312435.8%209483913.7&layers=theme-g250v%20theme-byer-bygder&mapheight=950&mapwidth=1123&profile=nun0000_public), which is useful for downloading geolocations of cities and 
 borders. It does not have a hi-res shapefile of the island though, so I've opted
 to use the sf data found in the rnaturalearth package.
 
@@ -140,7 +140,7 @@ grl_map +
 
 If you've spent any time in Greenland, you'll know that saying "the coast" is the same as saying "the whole country", and this is why. Another thing to note is that the municipality borders are impractical for drawing things like chloropleths, most of the area is just ice cap anyway.
 
-One final thing I'd like to put on this is information about population. Looking at the map as it is now, the coast actually looks quite populous. I assure you that this is not the case, settlements are much smaller in population than cities. Population figures for every locality are available at [Statistics Greenland]("https://bank.stat.gl/BEEST4"). I have a copy saved at the data folder:
+One final thing I'd like to put on this is information about population. Looking at the map as it is now, the coast actually looks quite populous. I assure you that this is not the case, settlements are much smaller in population than cities. Population figures for every locality are available at [Statistics Greenland](https://bank.stat.gl/BEEST4). I have a copy saved at the data folder:
 
 ```{r, message = FALSE}
 # Raw population data
@@ -215,9 +215,9 @@ This is bonkers.
 
 ## Links
 
-I have a zip file with the raw data used in this post [right here]("data/map_data.zip")
+I have a zip file with the raw data used in this post [right here](data/map_data.zip)
 
-Most of what I know about sf objects is straight from [Geocomputation with R]("https://geocompr.robinlovelace.net/")
+Most of what I know about sf objects is straight from [Geocomputation with R](https://geocompr.robinlovelace.net/)
 
 For messing around with leaflet, I recommend going to https://rstudio.github.io/leaflet/ 
 
